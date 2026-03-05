@@ -1,0 +1,290 @@
+{
+  "name": "Industry Daily Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c3e3777a-3395-4200-9466-20a529845b29",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const feeds = [\n  {\n    \"category\": \"Tech & Innovation\",\n    \"publicationName\": \"TechCrunch\",\n    \"rssFeedUrl\": \"https://techcrunch.com/feed/\",\n    \"strategicFocus\": \"Startup funding, tech innovations, AI advancements\"\n  },\n  {\n    \"category\": \"Global Economy\",\n    \"publicationName\": \"Reuters Business\",\n    \"rssFeedUrl\": \"https://www.reutersagency.com/feed/?best-topics=business-finance&type=rss\",\n    \"strategicFocus\": \"Global markets, trade policies, broad economic shifts\"\n  },\n  {\n    \"category\": \"Business Strategy\",\n    \"publicationName\": \"Harvard Business Review\",\n    \"rssFeedUrl\": \"https://smartbrief.com/hbr/feed\",\n    \"strategicFocus\": \"Leadership trends, organizational design, GTM strategy\"\n  },\n  {\n    \"category\": \"[Your Industry Niche]\",\n    \"publicationName\": \"[Target Publication Name]\",\n    \"rssFeedUrl\": \"https://www.example-industry-news.com/rss\",\n    \"strategicFocus\": \"[Specify what trends the AI should hunt for here]\"\n  }\n];\n\n// This loop translates the array into n8n's strict item structure\nreturn feeds.map(feed => {\n  return {\n    json: feed\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d241a4c3-4740-45c1-9706-1fb61fb498f2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.rssFeedUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "6cb89e5e-76f6-4840-9c83-8d3e2ae51f90",
+      "name": "RSS Read",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8d440522-aa23-42af-b6bf-7633779b8257",
+              "leftValue": "={{ $json.pubDate }}",
+              "rightValue": "={{ $now.minus({hours: 24}) }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        608,
+        0
+      ],
+      "id": "88292590-340d-4db7-947a-32c81874d640",
+      "name": "Filter",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "title"
+            },
+            {
+              "fieldToAggregate": "link"
+            },
+            {
+              "fieldToAggregate": "contentSnippet"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "b4621ff9-450a-4946-b995-7b7f35d7df4e",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an elite Business Intelligence Analyst and Product Manager for [Insert Company Name].\n\nI am providing you with a JSON list of news articles from the past day. Your job is to read them, filter out the noise, and write a highly actionable daily digest for the executive team.\n\nHere is the raw data:\n{{ JSON.stringify($json) }}\n\nInstructions:\n\nRead the provided articles. Discard any PR fluff, generic listicles, or news that does not impact our specific business model ([Insert Strategic Pillar 1], [Insert Strategic Pillar 2], [Insert Strategic Pillar 3]).\n\nGroup the highly relevant articles into these specific categories:\n\n📈 Industry Updates\n\n🚢 Supply Chain & Macro\n\n🚀 Tech Innovation\n\n👓 Competitor Moves\n\n⚖️ Compliance & Regulations\n\nCRITICAL: You must output a maximum of the top 3 most impactful news updates per category. Do not exceed 3 items per section. If a category had no relevant news this week, simply omit that category.\n\nFor each of the top updates, provide a brief bullet point summarizing the news.\n\nImmediately below each bullet point, write a bolded [Insert Company] Impact statement explaining exactly why we should care about this (e.g., pricing implications, inventory warnings, product opportunities).\n\nKeep it concise, professional, and formatted perfectly with markdown. Do not include any introductory or concluding pleasantries.\n\nAdd a note at the top of the email that this is written by AI and can contain errors. ",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        976,
+        0
+      ],
+      "id": "3f278ade-96cf-4ed4-bb2a-fc9836b5624a",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        976,
+        160
+      ],
+      "id": "d5547309-1303-4e4b-89ae-4a8b06a4d3e1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XnHZGAOGjq0EtFHu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "=={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "4a5f372c-27f7-4f8b-99e0-83a5689bde37",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "sendTo": "your.email@company.com",
+        "subject": "=Market Intel Digest \n {{ $now.setZone('America/New_York').toFormat('MM/dd/yyyy') }}",
+        "message": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "e1243a13-1645-458d-b824-13b422d65aac",
+      "name": "Send a message",
+      "webhookId": "ddad0042-9cbc-45fa-93d6-9ad8af209e08",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ni39udaZVVXCiAcU",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "none"
+  },
+  "versionId": "ee89fc0b-9898-4bf0-8a6a-a1e81dd96a04",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3d2edc2fb7586a5108a8934654cddd99d7fbfb5ea9c8f2315c3381d27ac279e8"
+  },
+  "id": "K8v9RIZuPXXePKtw",
+  "tags": []
+}
