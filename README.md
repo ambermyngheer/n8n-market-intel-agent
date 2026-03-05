@@ -45,4 +45,14 @@ The workflow uses the **Gmail node** (labeled "Send a message") to deliver the r
     3.  *(Optional)* Update the **Subject Line** to include your company name.
 
 ### 4. Inject Industry-Relevant RSS Feeds
-To make this agent work for your specific niche, you need to provide it with high-quality news sources
+To make this agent work for your specific niche, you need to provide it with high-quality news sources.
+1.  **Find your feeds:** Look for RSS links on your favorite industry publications (usually found in the footer or by adding `/feed/` to the URL).
+2.  **Update the Code Node:** Open the **Code in JavaScript** node at the start of the workflow.
+3.  **Add your sources:** Locate the `const feeds = [...]` array and add your URLs following the existing schema:
+```javascript
+{
+  "category": "Retail Strategy", 
+  "publicationName": "Retail Dive",
+  "rssFeedUrl": "[https://www.retaildive.com/feeds/news/](https://www.retaildive.com/feeds/news/)",
+  "strategicFocus": "Direct-to-consumer trends and inventory management"
+}
